@@ -71,5 +71,10 @@ if __name__ == '__main__':
     nSample = nDataset[0]
     device = torch.device("cuda: 0" if torch.cuda.is_available() else "cpu")
     model = Alexnet()
-    y_hat = model(nSample['image'].to(device).unsqueeze(0))
-    print("True label is: {} Predict label is: {}".format(nSample['label'], y_hat))
+    print(model)
+    with torch.set_grad_enabled(False):
+        y_hat = model(nSample['image'].to(device).unsqueeze(0))
+        _, pred_label = torch.max(y_hat.view(-1, 3), 1)
+        print("True label is: {} Predict label is: {}".format(nSample['label'], pred_label.item()))
+    for parameters in model.parameters():
+        print(parameters)
