@@ -7,19 +7,47 @@ from torch.utils.data import DataLoader
 import copy
 import os
 import matplotlib.pyplot as plt
+import random
 
 from Dataset import Dataset
 from Network import Alexnet
-class Model():
-    def __init__(self, _Net, _class_num, _data_loader, _device, _criterion, _optimizer, _schduler, _num_epoches=50):
+
+class Classification_Model():
+
+    def __init__(self, _Net, _Classes_set, _data_loader, _device, _criterion, _optimizer, _schduler, _num_epoches=50):
         self.model = _Net
-        self.class_num = _class_num
+        self.classes_set = _Classes_set
+        self.class_num = len(_Classes_set)
         self.data_loader = _data_loader
         self.device = _device
         self.criterion = _criterion
         self.optimizer = _optimizer
         self.schduler = _schduler
         self.num_epoches = _num_epoches
+
+    def check_data(self, phase):
+        dataset = self.data_loader[phase]
+        idx = random.randint(0, len(dataset))
+        sample = dataset.dataset[idx]
+        print(idx, sample['image'].shape, self.classes_set[sample['label']])
+        image = transforms.ToPILImage()(sample['image'])
+        plt.imshow(image)
+        plt.show()
+        plt.close('all')
+
+    def visualize(self):
+        self.model.eval()
+        with torch.no_grad():
+            for _, data in enumerate(self.data_loader['val']):
+                inputs = data['image']
+                labels = data['label'].to(self.device)
+
+                x_classes = self.model(inputs.to(self.device)).view(-1, self.class_num)
+                _, pred_label = torch.max(x_classes, 1)
+
+                print(inputs.shape)
+                plt.imshow(transforms.ToPILImage()(inputs.squeeze(0)))
+                plt.title('predicted classes: {}\n ground-truth label:{}'.format(self.classes_set[pred_label], self.classes_set[labels]))
 
     def train(self):
         self.Loss_list = {'train':[], 'val':[]}
@@ -49,7 +77,7 @@ class Model():
                     with torch.set_grad_enabled(phase == 'train'):
                         pred_label = self.model(inputs).view(-1, self.class_num)
                         _, pred_classes = torch.max(pred_label, 1)
-                        loss = self.criterion(pred_classes, labels)
+                        loss = self.criterion(pred_label, labels)
                         if phase == 'train':
                             loss.backward()
                             self.optimizer.step()
@@ -58,9 +86,9 @@ class Model():
                     correct_label += torch.sum(pred_classes == labels)
 
                 epoch_loss = running_loss / len(self.data_loader[phase].dataset)
-                Loss_list[phase].append(epoch_loss)
+                self.Loss_list[phase].append(epoch_loss)
                 epoch_correct = correct_label.double() / len(self.data_loader[phase].dataset)
-                Acc_list[phase].append(100 * epoch_correct)
+                self.Acc_list[phase].append(100 * epoch_correct)
                 print('{} Loss: {:.4f}  Accuracy: {:.2%}'.format(phase, epoch_loss, epoch_correct))
 
                 if phase == 'val' and epoch_correct > best_acc:
@@ -96,7 +124,7 @@ class Model():
         plt.title('train and val acc vs .epoches')
         plt.ylabel('acc')
         plt.savefig('train and val acc vs epoches.jpg')
-        plt.closs('all')
+        plt.close('all')
 
 if __name__ == '__main__':
     sample_path = r'D:\Lynn\code\ChickenRatRabbit\Data'
@@ -107,8 +135,8 @@ if __name__ == '__main__':
     val_transforms = transforms.Compose([transforms.Resize((227, 227)),
                                         transforms.ToTensor()
                                         ])
-    train_Dataset = Dataset(os.path.join(sample_path, 'ChickenRatRabbit_train.csv'))
-    val_Dataset = Dataset(os.path.join(sample_path, 'ChickenRatRabbit_val.csv'), None)
+    train_Dataset = Dataset(os.path.join(sample_path, 'ChickenRatRabbit_train.csv'), train_transforms)
+    val_Dataset = Dataset(os.path.join(sample_path, 'ChickenRatRabbit_val.csv'), val_transforms)
     
     train_dataloader = DataLoader(dataset=train_Dataset, batch_size=16, shuffle=True)
     val_dataloader = DataLoader(dataset=val_Dataset)
@@ -120,10 +148,13 @@ if __name__ == '__main__':
     optimizer = optim.SGD(network.parameters(), lr=0.01, momentum=0.9)
     criterion = nn.CrossEntropyLoss()
     exp_lr_schduler = lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
-    Sample_model = Model(network, 3, data_loader, device, criterion, optimizer, exp_lr_schduler, 100)
+    Sample_model = Classification_Model(network, ['Chicken', 'Rat', 'Rabbit'], data_loader, device, criterion, optimizer, exp_lr_schduler, 100)
+    Sample_model.check_data('train')
+    Sample_model.check_data('val')
     Sample_model.train()
     Sample_model.plot_acc()
     Sample_model.plot_loss
+    Sample_model.visualize()
 
 
 
