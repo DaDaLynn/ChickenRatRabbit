@@ -1,9 +1,9 @@
 import os
 
 class RawImageRename:
-    def __init__(self, root, stage, species):
-        self.DataPath = os.path.join(root, stage, species)
-        self.species = species
+    def __init__(self, _root, _stage, _species):
+        self.DataPath = os.path.join(_root, _stage, _species)
+        self.species = _species
 
     def rename(self):
         filenames = os.listdir(self.DataPath)
@@ -17,12 +17,13 @@ class RawImageRename:
                 print("{} th image is renamed".format(n))
 
 if __name__ == "__main__":
-    root = r"D:\Lynn\code\ChickenRatRabbit\Data"
+    current_path = os.path.dirname(os.path.realpath(__file__))
+    data_root_path = os.path.abspath(current_path + os.path.sep + "../Data")
     stage = ['train', 'val']
     species = ['chickens', 'rats', 'rabbits']
     
     for s in stage:
         for sp in species:
-            mImageRename = RawImageRename(root, s, sp)
+            mImageRename = RawImageRename(data_root_path, s, sp)
             mImageRename.rename()
 

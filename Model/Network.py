@@ -66,7 +66,8 @@ if __name__ == '__main__':
     val_transforms = transforms.Compose([transforms.Resize((227, 227)),
                                         transforms.ToTensor()
                                         ])
-    sample_path = r'D:\Lynn\code\ChickenRatRabbit\Data'
+    current_path = os.path.dirname(os.path.realpath(__file__))
+    sample_path = os.path.abspath(current_path + os.path.sep + "../Data")
     nDataset = Dataset(os.path.join(sample_path, 'ChickenRatRabbit_val.csv'), val_transforms)
     nSample = nDataset[0]
     device = torch.device("cuda: 0" if torch.cuda.is_available() else "cpu")

@@ -127,7 +127,8 @@ class Classification_Model():
         plt.close('all')
 
 if __name__ == '__main__':
-    sample_path = r'D:\Lynn\code\ChickenRatRabbit\Data'
+    current_path = os.path.dirname(os.path.realpath(__file__))
+    sample_path = os.path.abspath(current_path + os.path.sep + "../Data")
     train_transforms = transforms.Compose([transforms.Resize((227, 227)),
                                         transforms.RandomHorizontalFlip(),
                                         transforms.ToTensor()
